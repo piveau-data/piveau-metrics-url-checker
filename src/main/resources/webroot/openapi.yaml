@@ -1,0 +1,85 @@
+openapi: 3.0.0
+
+info:
+  version: '1.0'
+  title: URL-Checker
+
+servers:
+  - url: 'http://localhost:8080'
+    description: Local development server
+
+paths:
+  /check:
+    post:
+      summary: Create a request to check a number of URLs. A HTTP GET request is send to each URL provided an their results send back to the caller using a callback URL
+      operationId: checkUrl
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UrlCheckRequest'
+      responses:
+        '202':
+          description: Request is valid and has been accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrlCheckRequest'
+              examples:
+                example:
+                  value: {  "callback": "http://localhost:8080/callback",
+                            "urls": ["http://www.google.com", "http://en.wikipedia.org"]}
+        '400':
+          description: Malformed JSON payload or invalid URLs provided in request body
+      callbacks:
+        UrlCheckResponse:
+          '{$request.body#/callback}':
+            post:
+              summary: Send results of URL check(s) to callback server
+              operationId: sendUrlCheckResponse
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/UrlCheckResponse'
+                    examples:
+                      example:
+                        value: [{ "url": "http://www.google.com",
+                                  "statusCode": "200",
+                                  "mimeType": "text/html",
+                                  "message": "null"}]
+              responses:
+                '200':
+                  description: Response has been accepted by callback server
+
+
+components:
+  schemas:
+    UrlCheckRequest:
+      required:
+        - callback
+        - urls
+      properties:
+        callback:
+          type: string
+        urls:
+          type: array
+          items:
+            type: string
+
+    UrlCheckResponse:
+      required:
+        - url
+        - statusCode
+        - mimeType
+      properties:
+        url:
+          type: string
+        statusCode:
+          type: integer
+          format: int32
+        mimeType:
+          type: string
+        message:
+          type: string

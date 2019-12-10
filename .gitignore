@@ -1,0 +1,6 @@
+.idea
+url-checker.iml
+.vertx
+target/
+logs/
+config.json
